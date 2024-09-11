@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
@@ -21,8 +21,8 @@ class CameraNode(Node):
 
         # Creating a subcription from the turtlebot3 camera
         self.subscription = self.create_subscription(
-            Image,
-            '/image_raw',
+            CompressedImage,
+            '/image_raw/compressed',
             self.image_callback,
             10)
         self.subscription
@@ -30,7 +30,7 @@ class CameraNode(Node):
 
     def image_callback(self, msg):
         self.get_logger().info('I saw something on the camera!')
-        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        frame = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
         
         # Dealing with the image processing a bit
         hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
