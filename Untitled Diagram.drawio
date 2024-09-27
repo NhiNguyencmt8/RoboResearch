@@ -1,74 +1,92 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36" version="24.7.16">
   <diagram name="Page-1" id="jFXPxsinCvkzF3TZ9HeM">
-    <mxGraphModel dx="1900" dy="557" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2537" dy="847" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="lOsoRfdgfjEW7fB-648a-1" value="Laptop/Computer" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="-260" y="160" width="340" height="440" as="geometry" />
+          <mxGeometry x="-280" y="160" width="280" height="440" as="geometry" />
         </mxCell>
         <mxCell id="lOsoRfdgfjEW7fB-648a-2" value="&lt;div&gt;&lt;b&gt;display_node&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;Receives images and object coordinates then adds annotation and displays them in a window&amp;nbsp;&amp;nbsp;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-1" vertex="1">
           <mxGeometry x="40" y="60" width="255" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-3" value="" style="group" parent="1" vertex="1" connectable="0">
-          <mxGeometry x="190" y="210" width="650" height="320" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="lOsoRfdgfjEW7fB-648a-3" source="lOsoRfdgfjEW7fB-648a-5" target="lOsoRfdgfjEW7fB-648a-7" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-5" value="&lt;div&gt;&lt;b&gt;chase_object&lt;/b&gt;&lt;/div&gt;&lt;div&gt;Receives a position of the center of the object and feeds it to the PID controller to compute the steering; publishes the linear and angular velocities that the robot needs to turn&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry x="40" y="10" width="230" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lOsoRfdgfjEW7fB-648a-3" source="lOsoRfdgfjEW7fB-648a-7" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="170" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-7" value="&lt;b&gt;camera_robot_bringup&lt;/b&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Enables the sensors of the robot and publishes their values, enables the motors of the robot and make them command-able&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry x="210" y="190" width="220" height="130" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="lOsoRfdgfjEW7fB-648a-3" source="lOsoRfdgfjEW7fB-648a-9" target="lOsoRfdgfjEW7fB-648a-5" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="280" y="85" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-9" value="&lt;div&gt;&lt;b&gt;find_object&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;div&gt;Receives compressed images and does image processing for object detection, then publishes Images&lt;/div&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry x="360" y="10" width="250" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-10" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Message type: CompressedImage&lt;/font&gt;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Topic: /image_raw/compressed + /scan (maybe? not sure if that&#39;s the correct topic name/title but the idea would be for it to also&amp;nbsp;publish LIDAR data to the /scan topic&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=11;spacing=-8;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry x="410" y="250" width="240" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-11" value="Message type: Point&lt;div style=&quot;font-size: 12px;&quot;&gt;Topic: /object_center&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry x="240" y="20" width="160" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-12" value="Message type: Twist&amp;nbsp;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;span style=&quot;background-color: initial; font-size: 12px;&quot;&gt;Topic: /cmd_vel&lt;/span&gt;&lt;br style=&quot;font-size: 12px;&quot;&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" parent="lOsoRfdgfjEW7fB-648a-3" vertex="1">
-          <mxGeometry y="190" width="160" height="60" as="geometry" />
-        </mxCell>
         <mxCell id="lOsoRfdgfjEW7fB-648a-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="lOsoRfdgfjEW7fB-648a-9" target="lOsoRfdgfjEW7fB-648a-2" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="675" y="210" />
-              <mxPoint x="-105" y="210" />
+              <mxPoint x="675" y="190" />
+              <mxPoint x="-105" y="190" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="lOsoRfdgfjEW7fB-648a-14" value="Turtlebot3" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;" parent="1" vertex="1">
-          <mxGeometry x="170" y="160" width="670" height="550" as="geometry" />
+          <mxGeometry x="170" y="160" width="750" height="600" as="geometry" />
         </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-32" value="&lt;div&gt;&lt;b&gt;object_range&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt; Processes data from both the LIDAR and the camera to calculate the distance and angular position of the object&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
-          <mxGeometry x="210" y="380" width="220" height="130" as="geometry" />
+        <mxCell id="FswiAyByx9NlZA37DIq2-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="lOsoRfdgfjEW7fB-648a-14" source="lOsoRfdgfjEW7fB-648a-32" target="lOsoRfdgfjEW7fB-648a-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="424.94" />
+              <mxPoint x="290" y="79.94" />
+              <mxPoint x="155" y="79.94" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-33" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Message type: ???&lt;/font&gt;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Topic: /object_range(?)&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=11;spacing=-8;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
-          <mxGeometry x="430" y="430" width="240" height="60" as="geometry" />
+        <mxCell id="lOsoRfdgfjEW7fB-648a-32" value="&lt;div&gt;&lt;b&gt;get_object_range&lt;/b&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt; Processes data from both the LIDAR and the camera to calculate the distance and angular position of the object&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="375" y="359.94" width="220" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="lOsoRfdgfjEW7fB-648a-25" value="ROS Computation Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=25;" parent="1" vertex="1">
-          <mxGeometry x="160" y="40" width="330" height="40" as="geometry" />
+        <mxCell id="FswiAyByx9NlZA37DIq2-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="lOsoRfdgfjEW7fB-648a-14" source="lOsoRfdgfjEW7fB-648a-9" target="lOsoRfdgfjEW7fB-648a-32">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="179.94" />
+              <mxPoint x="700" y="424.94" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FswiAyByx9NlZA37DIq2-5" value="Message type: Point&lt;div style=&quot;font-size: 12px;&quot;&gt;Topic: /object_center&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" vertex="1" parent="lOsoRfdgfjEW7fB-648a-14">
+          <mxGeometry x="590" y="429.94" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FswiAyByx9NlZA37DIq2-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="lOsoRfdgfjEW7fB-648a-14" source="lOsoRfdgfjEW7fB-648a-5" target="lOsoRfdgfjEW7fB-648a-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-5" value="&lt;div&gt;&lt;b&gt;chase_object&lt;/b&gt;&lt;/div&gt;&lt;div&gt;Receives a position of the center of the object and feeds it to the PID controller to compute the steering; publishes the linear and angular velocities that the robot needs to turn&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="40" y="99.94" width="230" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="FswiAyByx9NlZA37DIq2-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="lOsoRfdgfjEW7fB-648a-14" source="lOsoRfdgfjEW7fB-648a-7" target="lOsoRfdgfjEW7fB-648a-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FswiAyByx9NlZA37DIq2-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="lOsoRfdgfjEW7fB-648a-14" source="lOsoRfdgfjEW7fB-648a-7" target="lOsoRfdgfjEW7fB-648a-32">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="519.94" />
+              <mxPoint x="485" y="519.94" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-7" value="&lt;b&gt;camera_robot_bringup&lt;/b&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Enables the sensors of the robot and publishes their values, enables the motors of the robot and make them command-able&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="45" y="349.94" width="220" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-9" value="&lt;div&gt;&lt;b&gt;detect_object&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;div&gt;Receives compressed images and does image processing for object detection, then publishes Images&lt;/div&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="360" y="99.94" width="250" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-10" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Message type: CompressedImage&lt;/font&gt;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Topic: /image_raw/compressed &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=11;spacing=-8;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="300" y="269.94" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-33" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Message type: LaserScan&lt;/font&gt;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Topic: /scan&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=11;spacing=-8;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="190" y="519.94" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FswiAyByx9NlZA37DIq2-15" value="Message type: Twist&amp;nbsp;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;span style=&quot;background-color: initial; font-size: 12px;&quot;&gt;Topic: /cmd_vel&lt;/span&gt;&lt;br style=&quot;font-size: 12px;&quot;&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" vertex="1" parent="lOsoRfdgfjEW7fB-648a-14">
+          <mxGeometry x="10" y="269.94" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-12" value="Message type:Pose2D&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;span style=&quot;background-color: initial; font-size: 12px;&quot;&gt;Topic: /robot_to_object&lt;/span&gt;&lt;br style=&quot;font-size: 12px;&quot;&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;" parent="lOsoRfdgfjEW7fB-648a-14" vertex="1">
+          <mxGeometry x="146" y="33.940000000000055" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lOsoRfdgfjEW7fB-648a-25" value="Lab 3 ROS Computation Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=25;" parent="1" vertex="1">
+          <mxGeometry x="125" y="40" width="400" height="40" as="geometry" />
         </mxCell>
         <mxCell id="lOsoRfdgfjEW7fB-648a-26" value="Team3&amp;nbsp;&lt;div style=&quot;font-size: 15px;&quot;&gt;Rut and Nhi&lt;span style=&quot;background-color: initial; font-size: 15px;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
           <mxGeometry x="232.5" y="80" width="185" height="30" as="geometry" />
         </mxCell>
         <mxCell id="lOsoRfdgfjEW7fB-648a-27" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Message type: CompressedImage&lt;/font&gt;&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Topic: /window_image/compressed&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontSize=12;spacing=-8;" parent="1" vertex="1">
-          <mxGeometry x="10" y="230" width="240" height="60" as="geometry" />
+          <mxGeometry x="-30" y="210" width="240" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
