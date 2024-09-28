@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'debug'
+package_name = 'lab3'
 
 setup(
     name=package_name,
@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'display_node = debug.display_node:main',
+            'object_detect = lab3.object_detect:main',
+            'get_object_range = lab3.get_object_range:main',
+            'chase_object = lab3.chase_object:main'
         ],
     },
 )

@@ -9,7 +9,7 @@ import numpy as np
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 
 
-class FindObject(Node):
+class ObjectDetect(Node):
 
     def __init__(self):
         super().__init__('camera_subscriber')
@@ -107,7 +107,7 @@ class FindObject(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    object_tracking = FindObject()
+    object_tracking = ObjectDetect()
     rclpy.spin(object_tracking)
 
     object_tracking.destroy_node()
