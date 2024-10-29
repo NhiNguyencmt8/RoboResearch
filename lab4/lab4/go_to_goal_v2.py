@@ -43,13 +43,24 @@ class GoToGoal(Node):
         self.global_pos = np.zeros(3) 
         self.global_ang = 0.0      
 
-        self.linear_speed = 0.4   
-        self.angular_speed = 0.3
-        self.min_distance = 0.15  # Minimum distance to consider the target reached
+        self.linear_speed = 0.6   
+        self.angular_speed = 0.2
+        self.min_distance = 0.05  # Minimum distance to consider the target reached
         self.Init = True  # Flag to indicate the first odometry reading
 
         # Target points for the robot to reach (x, y coordinates)
-        self.target_points = [ (1.5,0), (1.5, -1.4), (0, -1.5)] #(1.5,0)
+        filename = '/home/burger/our_ws/lab4/lab4/wayPoints.txt'
+        self.target_points = []
+
+        # Open the file and read the contents
+        with open(filename, 'r') as file:
+            for line in file:
+                # Split each line into coordinates and convert them to float
+                x, y = map(float, line.split())
+                # Append the tuple (x, y) to the points list
+                self.target_points.append((x, y))
+                self.get_logger().info(f'Add point: x={x:.2f}, y={y:.2f}')
+        self.get_logger().info('Done init waypoints')
         self.current_target_index = 0  # Index of the current target point
         self.target_x = 0.0
         self.target_y = 0.0
@@ -127,9 +138,9 @@ class GoToGoal(Node):
         # distance_to_target = np.sqrt((self.target_x - self.global_pos[0]) ** 2 + (self.target_y - self.global_pos[1]) ** 2)
         # angle_to_target = self.radians_to_degrees(np.arctan2(self.target_y - self.global_pos[1], self.target_x - self.global_pos[0]))
         # angle_error = angle_to_target - self.global_ang
-        # self.get_logger().info(f'Our angle: ( ), Angle to target={angle_to_target:.2f}, angle_error={angle_error:.2f}')
-        
+        # self.get_logger().info(f'Our angle: Angle to target={angle_to_target:.2f}, angle_error={angle_error:.2f}, distance={distance_to_target: .2f}')
         # self.get_logger().info(f'Next pose: x={self.target_x:.2f}, y={self.target_y:.2f}')
+        
         if self.state == 'idle':
             self.stop()
 
@@ -152,13 +163,15 @@ class GoToGoal(Node):
                     
                     # angle_to_target = self.radians_to_degrees(np.arctan2(self.target_y - self.global_pos[1], self.target_x - self.global_pos[0]))
                     # angle_error = angle_to_target - (-self.radians_to_degrees(self.global_ang))
-                    if self.target_y - 0.1 - self.global_pos[1] < 0 : #Fix this to angle later on
+                    angle_to_target = self.radians_to_degrees(np.arctan2(self.target_y - self.global_pos[1], self.target_x - self.global_pos[0]))
+                    angle_error = (angle_to_target - (self.radians_to_degrees(self.global_ang))) % 360
+                    if abs(angle_error) > 10 :
                         self.angular_speed = 0.175
                         self.get_logger().info('TUNRINGGG')
                         self.state = 'turning'
 
             else:
-                self.angular_speed = 0.3
+                self.angular_speed = 0.2
                 self.get_logger().info('Go straight!!')
                 self.state = 'go straight'
 
@@ -191,10 +204,11 @@ class GoToGoal(Node):
         self.cmd_vel_publisher.publish(twist)
 
     def turn_right_90_degrees(self):
-        self.get_logger().info('>>>>>>> Turning 90 degrees to the right...')
         angle_to_target = self.radians_to_degrees(np.arctan2(self.target_y - self.global_pos[1], self.target_x - self.global_pos[0]))
-        angle_error = angle_to_target - (self.radians_to_degrees(self.global_ang))
-        self.get_logger().info(f'Robot Heading: {self.radians_to_degrees(self.global_ang):.2f}, Goal Heading: {angle_to_target:.2f}, Angle Error: {angle_error:.2f}')
+        angle_error = (angle_to_target - (self.radians_to_degrees(self.global_ang))) % 360
+        if angle_error > 180:
+            angle_error -= 360
+        self.get_logger().info(f'Turning: Robot Heading: {self.radians_to_degrees(self.global_ang):.2f}, Goal Heading: {angle_to_target:.2f}, Angle Error: {angle_error:.2f}')
 
         twist = Twist()
         twist.linear.x = 0.0
@@ -218,8 +232,9 @@ class GoToGoal(Node):
     def go_straight(self):
         distance_to_target = np.sqrt((self.target_x - self.global_pos[0]) ** 2 + (self.target_y - self.global_pos[1]) ** 2)
         angle_to_target = self.radians_to_degrees(np.arctan2(self.target_y - self.global_pos[1], self.target_x - self.global_pos[0]))
-        angle_error = angle_to_target - (self.radians_to_degrees(self.global_ang))
-        # Log angles and error
+        angle_error = (angle_to_target - (self.radians_to_degrees(self.global_ang))) % 360
+        if angle_error > 180:
+            angle_error -= 360
         
         twist = Twist()
         if abs(angle_error) > 0.0:
@@ -227,9 +242,10 @@ class GoToGoal(Node):
         else:
             k = 0.05
         twist.angular.z = k* self.angular_speed * angle_error
-        self.get_logger().info(f'Distance to target: {distance_to_target:.2f}, Angle error {angle_error: .2f}, Angular velocity {twist.angular.z}')
+        self.get_logger().info(f' Going straight: Distance to target: {distance_to_target:.2f}, Angle error {angle_error: .2f}, Angular velocity {twist.angular.z}')
 
         if distance_to_target < self.min_distance or (self.current_target_index == 2 and self.global_pos[0] < 0.0):
+            twist.angular.z = 0.0
             twist.linear.x = 0.0
             self.cmd_vel_publisher.publish(twist)
             self.state = 'go to goal'
@@ -243,8 +259,7 @@ class GoToGoal(Node):
 
     def radians_to_degrees(self, radians):
         degrees = radians * (180 / math.pi)
-        # Wrap the degrees to the range -180 to 180
-        wrapped_degrees = (degrees + 180) % 360 - 180
+        wrapped_degrees = degrees % 360
         return wrapped_degrees
 
 def main(args=None):
