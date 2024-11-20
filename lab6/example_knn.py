@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import cv2
-import sys
-import csv
-import time
-import math
 import numpy as np
+import csv
+import math
 import random
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import StandardScaler
 
-### Load training images and labels
-
+# Load training and testing data
 imageDirectory = './2024F_imgs/'
 imageType = '.png'
 
@@ -16,79 +15,84 @@ with open(imageDirectory + 'labels.txt', 'r') as f:
     reader = csv.reader(f)
     lines = list(reader)
 
-#Randomly choose train and test data (50/50 split).
+# Randomly choose train and test data (50/50 split)
 random.shuffle(lines)
-train_lines = lines[:math.floor(len(lines)/2)][:]
-test_lines = lines[math.floor(len(lines)/2):][:]
-
-# this line reads in all images listed in the file in color, and resizes them to 25x33 pixels
-train = np.array([np.array(cv2.resize(cv2.imread(imageDirectory+train_lines[i][0]+imageType),(25,33))) for i in range(len(train_lines))])
+train_lines = lines[:math.floor(len(lines) / 2)][:]  # Training data
+test_lines = lines[math.floor(len(lines) / 2):][:]   # Testing data
 
 def extract_HOG(image):
-    hog = cv2.HOGDescriptor()
+    """
+    Extract HOG features from an image.
+    """
+    # Define HOGDescriptor with required parameters
+    winSize = (64, 64)  # Detection window size
+    blockSize = (16, 16)  # Block size
+    blockStride = (8, 8)  # Block stride
+    cellSize = (8, 8)  # Cell size
+    nbins = 9  # Number of bins
+
+    # Create the HOG descriptor object
+    hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
+
+    # Compute HOG features for the input image
     return hog.compute(image).flatten()
 
-
-
+# Preprocess training data
 train_data = []
-for i in range(len(test_lines)):
-    original_img = cv2.imread(imageDirectory+test_lines[i][0]+imageType)
-    test_img = np.array(cv2.resize(cv2.imread(imageDirectory+test_lines[i][0]+imageType),(25,33)))
+train_labels = []
+for i in range(len(train_lines)):
+    original_img = cv2.imread(imageDirectory + train_lines[i][0] + imageType)
     grayscale = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
-    shapes = extract_HOG(grayscale)
-    train_data.append(shapes)
+    resized_img = cv2.resize(grayscale, (64, 64))  # Higher resolution
+    features = extract_HOG(resized_img)
+    train_data.append(features)
+    train_labels.append(int(train_lines[i][1]))
 
-# here we reshape each image into a long vector and ensure the data type is a float (which is what KNN wants), note the *3 is due to 3 channels of color.
-train_data = train.flatten().reshape(len(train_lines), 33*25*3)
-train_data = train_data.astype(np.float32)
+train_data = np.array(train_data, dtype=np.float32)
+train_labels = np.array(train_labels, dtype=np.int32)
 
-# read in training labels
-train_labels = np.array([np.int32(train_lines[i][1]) for i in range(len(train_lines))])
+# Preprocess testing data
+test_data = []
+test_labels = []
+for i in range(len(test_lines)):
+    original_img = cv2.imread(imageDirectory + test_lines[i][0] + imageType)
+    grayscale = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
+    resized_img = cv2.resize(grayscale, (64, 64))  # Higher resolution
+    features = extract_HOG(resized_img)
+    test_data.append(features)
+    test_labels.append(int(test_lines[i][1]))
 
+test_data = np.array(test_data, dtype=np.float32)
+test_labels = np.array(test_labels, dtype=np.int32)
 
-### Train classifier
-knn = cv2.ml.KNearest_create()
-knn.train(train_data, cv2.ml.ROW_SAMPLE, train_labels)
-debug = False
-if(debug):
-	Title_images = 'Original Image'
-	Title_resized = 'Image Resized'
-	cv2.namedWindow( Title_images, cv2.WINDOW_AUTOSIZE )
+# Train SVM classifier
+svm = cv2.ml.SVM_create()
+svm.setType(cv2.ml.SVM_C_SVC)
+svm.setKernel(cv2.ml.SVM_RBF)  # Use RBF kernel
+svm.setC(100.0)  # Adjust regularization strength
+svm.setGamma(0.01)  # Experiment with gamma
 
-correct = 0.0
-confusion_matrix = np.zeros((6,6))
+svm.train(train_data, cv2.ml.ROW_SAMPLE, train_labels)
 
-k = 7
+# Test SVM classifier
+correct = 0
+confusion_matrix = np.zeros((6, 6))  # Assuming 6 classes
 
 for i in range(len(test_lines)):
-    original_img = cv2.imread(imageDirectory+test_lines[i][0]+imageType)
-    test_img = np.array(cv2.resize(cv2.imread(imageDirectory+test_lines[i][0]+imageType),(25,33)))
-    if(debug):
-        cv2.imshow(Title_images, original_img)
-        cv2.imshow(Title_resized, test_img)
-        key = cv2.waitKey()
-        print("\tdWait: " + str(i))
-        if key==27:    # Esc key to stop
-            break
-    test_img = test_img.flatten().reshape(1, 33*25*3)
-    test_img = test_img.astype(np.float32)
+    test_sample = test_data[i].reshape(1, -1)  # Reshape for prediction
+    test_label = test_labels[i]
 
-    test_label = np.int32(test_lines[i][1])
+    _, result = svm.predict(test_sample)
+    predicted_label = int(result[0, 0])
 
-    ret, results, neighbours, dist = knn.findNearest(test_img, k)
-
-    if test_label == ret:
-        print(str(lines[i][0]) + " Correct, " + str(ret))
+    if test_label == predicted_label:
         correct += 1
-        confusion_matrix[np.int32(ret)][np.int32(ret)] += 1
+        confusion_matrix[test_label][predicted_label] += 1
     else:
-        confusion_matrix[test_label][np.int32(ret)] += 1
-        
-        print(str(test_lines[i][0]) + " Wrong, " + str(test_label) + " classified as " + str(ret))
-        print("\tneighbours: " + str(neighbours))
-        print("\tdistances: " + str(dist))
+        confusion_matrix[test_label][predicted_label] += 1
+        print(f"{test_lines[i][0]} Wrong, {test_label} classified as {predicted_label}")
 
-
-
-print("\n\nTotal accuracy: " + str(correct/len(test_lines)))
+accuracy = correct / len(test_lines)
+print("\n\nTotal accuracy: {:.2f}%".format(accuracy * 100))
+print("Confusion Matrix:")
 print(confusion_matrix)
