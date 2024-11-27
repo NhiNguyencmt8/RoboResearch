@@ -8,6 +8,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
+import pickle
+
 # Load training and testing data
 imageDirectory = './2024F_imgs/'
 imageType = '.png'
@@ -146,3 +148,6 @@ print(f"Cross-Validation accuracy just to make sure my model is not acting funny
 # cv2.destroyAllWindows()
 
 
+with open("svm_model.pickle", "wb") as f:
+    pickle.dump(svm, f)
+print("Model saved to svm_model.pickle")
