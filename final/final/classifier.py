@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-import rospy
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Int8
 import cv2
@@ -8,26 +9,74 @@ from cv_bridge import CvBridge
 import pickle
 import random
 
-class Classifier:
+class Classifier(Node):
 
     def __init__(self):
-        rospy.init_node('classifier', anonymous=True)
-
-        self.svm_classifier = pickle.load(open('svm_model.pickle', 'rb'))
+        super().__init__('classifier')
+        
+        # Load SVM model
+        self.svm_classifier = pickle.load(open('/home/notsean/ros_ws/src/final/final/svm_model.pickle', 'rb'))
+        
+        # Initialize CvBridge
         self.bridge = CvBridge()
 
-        rospy.Subscriber('/image_raw/compressed', CompressedImage, self.image_callback, queue_size=1)
+        # Create subscribers
+        self.image_subscriber = self.create_subscription(
+            CompressedImage,
+            '/image_raw/compressed',
+            self.image_callback,
+            10
+        )
 
-        self.prediction_publisher = rospy.Publisher('/prediction', Int8, queue_size=10)
-        self.classified_image_publisher = rospy.Publisher('/classifier_image', CompressedImage, queue_size=10)
+        # Create publishers
+        self.prediction_publisher = self.create_publisher(Int8, '/prediction', 10)
+        self.classified_image_publisher = self.create_publisher(CompressedImage, '/classifier_image', 10)
+    
+
+
+    def rgb_to_cmyk(self, image):
+        bgr = image.astype(np.float32) / 255.0
+        r, g, b = bgr[..., 2], bgr[..., 1], bgr[..., 0]
+        k = 1 - np.max([r, g, b], axis=0)
+        c = (1 - r - k) / (1 - k + 1e-8)
+        m = (1 - g - k) / (1 - k + 1e-8)
+        y = (1 - b - k) / (1 - k + 1e-8)
+        cmyk = np.stack((c, m, y, k), axis=-1) * 255
+        return cmyk.astype(np.uint8)
+
+    def adjust_brightness_contrast(self, image):
+        alpha = random.uniform(0.8, 1.2)
+        beta = random.randint(-30, 30) 
+        return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+
+    def extract_HOG(self, image):
+        winSize = (64, 64) 
+        blockSize = (16, 16)
+        blockStride = (8, 8)
+        cellSize = (8, 8)
+        nbins = 9
+        hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
+        # Compute HOG features
+        return hog.compute(image).flatten()
+
+    
+    def extract_features_cymk(self, image):
+        cmyk_img = self.rgb_to_cmyk(image)
+        grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        c_features = self.extract_HOG(cv2.resize(cmyk_img[..., 0], (64, 64)))
+        m_features = self.extract_HOG(cv2.resize(cmyk_img[..., 1], (64, 64)))
+        y_features = self.extract_HOG(cv2.resize(cmyk_img[..., 2], (64, 64)))
+        k_features = self.extract_HOG(cv2.resize(cmyk_img[..., 3], (64, 64)))
+
+        gray_features = self.extract_HOG(cv2.resize(grayscale, (64, 64)))
+
+        return np.concatenate((c_features, m_features, y_features, k_features, gray_features))
+
 
     def preprocess_image(self, image):
-        alpha = random.uniform(0.8, 1.2)
-        beta = random.randint(-30, 30)
-        adjusted = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-        gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (150, 150))
-        return resized
+        augmented_image = self.adjust_brightness_contrast(image)
+        features = self.extract_features_cymk(augmented_image)
+        return features
 
     def extract_hog_features(self, image):
         hog = cv2.HOGDescriptor((64, 64), (16, 16), (8, 8), (8, 8), 9)
@@ -35,27 +84,37 @@ class Classifier:
 
     def predict(self, image):
         preprocessed_image = self.preprocess_image(image)
-        features = self.extract_hog_features(preprocessed_image)
-        prediction = self.svm_classifier.predict([features])[0]
+        # features = self.extract_hog_features(preprocessed_image)
+        prediction = self.svm_classifier.predict([preprocessed_image])[0]
         return prediction
 
     def image_callback(self, msg):
         try:
             image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
             predicted_label = self.predict(image)
+
             prediction_msg = Int8()
             prediction_msg.data = int(predicted_label)
             self.prediction_publisher.publish(prediction_msg)
 
+            # Optionally, publish the classified image (same as input in this example)
             classified_image_msg = self.bridge.cv2_to_compressed_imgmsg(image)
             self.classified_image_publisher.publish(classified_image_msg)
 
         except Exception as e:
-            rospy.logerr(f"Error in image_callback: {e}")
+            self.get_logger().error(f"Error in image_callback: {e}")
+
+def main(args=None):
+    rclpy.init(args=args)
+    classifier_node = Classifier()
+
+    # Spin to keep the node running
+    rclpy.spin(classifier_node)
+
+    # Cleanup after spin ends
+    classifier_node.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
-    try:
-        classifier_node = Classifier()
-        rospy.spin()
-    except rospy.ROSInterruptException:
-        pass
+    main()
+
