@@ -88,7 +88,7 @@ test_labels = np.array(test_labels, dtype=np.int32)
 # train_data = scaler.fit_transform(train_data)
 # test_data = scaler.transform(test_data)
 
-selector = SelectKBest(score_func=f_classif, k=1500)
+selector = SelectKBest(score_func=f_classif, k=2500)
 train_data = selector.fit_transform(train_data, train_labels)
 test_data = selector.transform(test_data)
 
