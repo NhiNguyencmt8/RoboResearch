@@ -1,120 +1,142 @@
 #!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
 from std_msgs.msg import Int8
-import cv2
 import numpy as np
+import cv2
 from cv_bridge import CvBridge
+import os
+from PIL import Image
+from sklearn import svm
 import pickle
-import random
+import warnings
+
 
 class Classifier(Node):
 
-    def __init__(self):
-        super().__init__('classifier')
-        
-        # Load SVM model
-        self.svm_classifier = pickle.load(open('/home/notsean/ros_ws/src/final/final/svm_model.pickle', 'rb'))
-        
-        # Initialize CvBridge
-        self.bridge = CvBridge()
+	def __init__(self):
+		# Creates the node.
+		super().__init__('classifier')
 
-        # Create subscribers
-        self.image_subscriber = self.create_subscription(
-            CompressedImage,
-            '/image_raw/compressed',
-            self.image_callback,
-            10
-        )
+		# Set Parameters
+		self.declare_parameter('show_image_bool', True)
+		self.declare_parameter('window_name', "Raw Image")
 
-        # Create publishers
-        self.prediction_publisher = self.create_publisher(Int8, '/prediction', 10)
-        self.classified_image_publisher = self.create_publisher(CompressedImage, '/classifier_image', 10)
-    
+		# Determine Window Showing Based on Input
+		self._display_image = bool(self.get_parameter('show_image_bool').value)
 
+		# Declare some variables
+		self._titleOriginal = self.get_parameter(
+			'window_name').value  # Image Window Title
+		if (self._display_image):
+		# Set Up Image Viewing
+			cv2.namedWindow(self._titleOriginal, cv2.WINDOW_AUTOSIZE)  # Viewing Window
+			# Viewing Window Original Location
+			cv2.moveWindow(self._titleOriginal, 50, 50)
 
-    def rgb_to_cmyk(self, image):
-        bgr = image.astype(np.float32) / 255.0
-        r, g, b = bgr[..., 2], bgr[..., 1], bgr[..., 0]
-        k = 1 - np.max([r, g, b], axis=0)
-        c = (1 - r - k) / (1 - k + 1e-8)
-        m = (1 - g - k) / (1 - k + 1e-8)
-        y = (1 - b - k) / (1 - k + 1e-8)
-        cmyk = np.stack((c, m, y, k), axis=-1) * 255
-        return cmyk.astype(np.uint8)
+		# Set up QoS Profiles for passing images over WiFi
+		image_qos_profile = QoSProfile(
+			reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+			history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+			durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
+			depth=1
+		)
 
-    def adjust_brightness_contrast(self, image):
-        alpha = random.uniform(0.8, 1.2)
-        beta = random.randint(-30, 30) 
-        return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+		self.SVM_CLASSIFIER = pickle.load(open('./svm_model_test.pickle', 'rb'))
 
-    def extract_HOG(self, image):
-        winSize = (64, 64) 
-        blockSize = (16, 16)
-        blockStride = (8, 8)
-        cellSize = (8, 8)
-        nbins = 9
-        hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
-        # Compute HOG features
-        return hog.compute(image).flatten()
+		# Declare that the find_object node is subcribing to the /camera/image/compressed topic.
+		self._video_subscriber = self.create_subscription(
+				CompressedImage,
+				'/image_raw/compressed',
+				self.image_callback,
+				image_qos_profile)
+		self._video_subscriber  # Prevents unused variable warning.
 
-    
-    def extract_features_cymk(self, image):
-        cmyk_img = self.rgb_to_cmyk(image)
-        grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        c_features = self.extract_HOG(cv2.resize(cmyk_img[..., 0], (64, 64)))
-        m_features = self.extract_HOG(cv2.resize(cmyk_img[..., 1], (64, 64)))
-        y_features = self.extract_HOG(cv2.resize(cmyk_img[..., 2], (64, 64)))
-        k_features = self.extract_HOG(cv2.resize(cmyk_img[..., 3], (64, 64)))
+		
+		self.prediction_publisher = self.create_publisher(Int8, '/prediction', 10)
+		
 
-        gray_features = self.extract_HOG(cv2.resize(grayscale, (64, 64)))
+	def crop(self, img):
+		img = np.array(img)
+		gray = cv2.medianBlur(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY), 5)
+		(_, image_th) = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+		edges = cv2.Canny(image_th, 50, 200)
+		
+		try:
+			contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+			c = max(contours, key=cv2.contourArea)
+			x, y, w, h = cv2.boundingRect(c)
+			cropped_contour = img[y-10:y + h+10, x-10:x + w+10]
+			resized_img = cv2.resize(cropped_contour,(150, 150),interpolation = cv2.INTER_LINEAR)
+		except Exception as e:
+			resized_img = None
 
-        return np.concatenate((c_features, m_features, y_features, k_features, gray_features))
+		return resized_img
 
 
-    def preprocess_image(self, image):
-        augmented_image = self.adjust_brightness_contrast(image)
-        features = self.extract_features_cymk(augmented_image)
-        return features
+	def transform_image(self, image):
+		image = np.array(image)
+		gray = cv2.medianBlur(cv2.cvtColor(image, cv2.COLOR_RGB2GRAY), 7)
+		(_, image_th) = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+		edges = cv2.Canny(image_th, 50, 200)
 
-    def extract_hog_features(self, image):
-        hog = cv2.HOGDescriptor((64, 64), (16, 16), (8, 8), (8, 8), 9)
-        return hog.compute(image).flatten()
+		try:
+			contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+			c = max(contours, key=cv2.contourArea)
+			x, y, w, h = cv2.boundingRect(c)        
+			cropped_contour = image[y-10:y + h+10, x-10:x + w+10]
+			if cropped_contour.shape[0]/image.shape[0] > 0.2 and cropped_contour.shape[1]/image.shape[1] > 0.2:
+				train_image=cv2.resize(cropped_contour,(150, 150),interpolation=cv2.INTER_LINEAR)
+			else:
+				train_image=cv2.resize(cropped_contour,(150, 150),interpolation=cv2.INTER_LINEAR)
+				return True , train_image
+				
+		except Exception as e:
+			train_image = image[image.shape[0]//2-75:image.shape[0]//2+75, image.shape[1]//2-75:image.shape[1]//2+75]
+		return False, train_image
+	
 
-    def predict(self, image):
-        preprocessed_image = self.preprocess_image(image)
-        # features = self.extract_hog_features(preprocessed_image)
-        prediction = self.svm_classifier.predict([preprocessed_image])[0]
-        return prediction
+	def get_preds(self, img, model):
+				
+		isWall, cropped = self.transform_image(img)
+		
+		if isWall:
+			img = np.array(img)
+			pred=0
+		else:
+			img_bw = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
+			hog = cv2.HOGDescriptor((64,64),(16,16),(8,8),(8,8),9,1,4.0,0,2.0e-1,0,64)
+			hist = hog.compute(img_bw)
+			dec = model.decision_function(hist[None,:])
+			pred = np.argmax(dec, axis = 1)[0]
+				
+		return pred
 
-    def image_callback(self, msg):
-        try:
-            image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            predicted_label = self.predict(image)
 
-            prediction_msg = Int8()
-            prediction_msg.data = int(predicted_label)
-            self.prediction_publisher.publish(prediction_msg)
+	def image_callback(self, CompressedImage):
+		self.imgBGR = CvBridge().compressed_imgmsg_to_cv2(CompressedImage, "bgr8")
+		#cv2.imshow("Window", self.imgBGR)
+		#cv2.waitKey(1)
+		self.pred = self.get_preds(self.imgBGR, self.SVM_CLASSIFIER)
+		
+		msg = Int8()
+		msg.data = int(self.pred)
+		self.prediction_publisher.publish(msg)
 
-            # Optionally, publish the classified image (same as input in this example)
-            classified_image_msg = self.bridge.cv2_to_compressed_imgmsg(image)
-            self.classified_image_publisher.publish(classified_image_msg)
 
-        except Exception as e:
-            self.get_logger().error(f"Error in image_callback: {e}")
 
-def main(args=None):
-    rclpy.init(args=args)
-    classifier_node = Classifier()
+def main():
+	warnings.filterwarnings("ignore")
+	rclpy.init()
+	classifier = Classifier()
+	rclpy.spin(classifier)
+	classifier.destroy_node()
+	rclpy.shutdown()
+	
 
-    # Spin to keep the node running
-    rclpy.spin(classifier_node)
-
-    # Cleanup after spin ends
-    classifier_node.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
-
+if __name__=='__main__':
+	main()
