@@ -1,23 +1,22 @@
-import rospy
+import rclpy
+from rclpy.node import Node
 from geometry_msgs.msg import Point, Twist
 from std_msgs.msg import Int8
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 import numpy as np
-import time
 from statistics import mode
 
-class GoToGoal:
+class GoToGoal(Node):
 
     def __init__(self):
-        # Initialize the node
-        rospy.init_node('go_to_goal', anonymous=True)
+        super().__init__('go_to_goal')
 
         # Subscribers and Publishers
-        self.odom_subscriber = rospy.Subscriber('/odom', Odometry, self.odom_callback)
-        self.velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.sign_subscriber = rospy.Subscriber('/prediction', Int8, self.sign_callback)
-        self.laserscan_subscriber = rospy.Subscriber('/scan', LaserScan, self.scan_callback)
+        self.odom_subscriber = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        self.velocity_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.sign_subscriber = self.create_subscription(Int8, '/prediction', self.sign_callback, 10)
+        self.laserscan_subscriber = self.create_subscription(LaserScan, '/scan', self.scan_callback, 10)
 
         self.Init = True
         self.reached_goal = False
@@ -25,6 +24,7 @@ class GoToGoal:
         self.average_distance = 1.5
         self.state = 0
         self.sign = ""
+        self.get_logger().info(f'I see sign is {self.sign}')
         self.sign_buffer = [4, 4, 4, 4, 4]
 
     def scan_callback(self, msg):
@@ -32,12 +32,13 @@ class GoToGoal:
         self.average_distance_backward = msg.ranges[70]
 
     def sign_callback(self, msg):
+
         sign = msg.data
         if sign != 0:
             self.sign_buffer.append(sign)
         if len(self.sign_buffer) > 10:
             self.sign_buffer.pop(0)
-        
+
         if sign == 0:
             self.sign = "wall"
         elif sign == 1:
@@ -50,6 +51,8 @@ class GoToGoal:
             self.sign = "stop"
         elif sign == 5:
             self.sign = "goal"
+        self.get_logger().info(f'I see sign is {self.sign}')
+
 
     def move(self):
         if self.state == 0:
@@ -86,7 +89,7 @@ class GoToGoal:
             self.reached_goal = True
 
     def turn_around(self):
-        print("Turning 180")
+        self.get_logger().info("Turning 180")
         if self.globalAng < self.goalAngle:
             self.simple_velocity_controller(0.0, 0.3)
         else:
@@ -135,6 +138,8 @@ class GoToGoal:
         elif sign == 5:
             self.sign = "goal"
             self.state = 7
+        self.get_logger().info(f'Recoverying, I see sign is {self.sign}')
+
 
     def simple_velocity_controller(self, speed_x, speed_angular):
         velocity_msg = Twist()
@@ -145,7 +150,7 @@ class GoToGoal:
     def odom_callback(self, msg):
         self.update_odometry(msg)
         if self.reached_goal:
-            rospy.loginfo("Goal Reached!!")
+            self.get_logger().info("Goal Reached!!")
         else:
             self.move()
 
@@ -162,10 +167,12 @@ class GoToGoal:
         self.globalAng = orientation - self.Init_ang
         self.globalAng = np.arctan2(np.sin(self.globalAng), np.cos(self.globalAng))
 
-
 def main():
+    rclpy.init()
     go_to_goal = GoToGoal()
-    rospy.spin()
+    rclpy.spin(go_to_goal)
+    go_to_goal.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
